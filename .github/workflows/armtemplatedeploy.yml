@@ -13,12 +13,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
+# Login in Azure
       - name: Azure Login
         uses: Azure/login@v1
         with: 
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+  
+# Create Resource Group 
       - name: Deploy Resource Group githubactions-rg
         uses: Azure/arm-deploy@v1
         with:
@@ -27,3 +29,14 @@ jobs:
           region: West Europe
           template: ./arm-template/resourcegroup.json
           deploymentName: githubactions-rg
+
+#Create StorageAccount with Parameters
+      - name: Deploy Storage Account
+        uses: Azure/arm-deploy@v1
+        with:
+          scope: subscription
+          resourceGroupName: githubactions-rg
+          subscriptionId: deefdd30-bfc7-4245-a3b2-f6141b537894
+          template: ./arm-template/storageaccount.json
+          parameters: ./arm-template/storageaccount.parameters.json
+          deploymentMode: incremential
