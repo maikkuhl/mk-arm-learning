@@ -1,0 +1,24 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspaceName": {
+            "value": "AvD-Workspace-2022"
+        },
+        "friendlyName": {
+            "value": "RemoteDesktop"
+        },
+        "location": {
+            "value": "westeurope"
+        },
+        "appGroups": {
+            "value": []
+        },
+        "tags": {
+            "value": {}
+        },
+        "apiVersion": {
+            "value": "2021-09-03-preview"
+        }
+    }
+}

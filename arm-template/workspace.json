@@ -1,0 +1,127 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspaceName": {
+            "type": "string"
+        },
+        "workspaceDescription": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "friendlyName": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "appGroups": {
+            "type": "array",
+            "defaultValue": []
+        },
+        "workspaceDiagnosticSettingsStorageAccount": {
+            "type": "string",
+            "metadata": {
+                "description": "The storage uri to put the diagnostic logs"
+            },
+            "defaultValue": ""
+        },
+        "workspaceDiagnosticSettingsLogAnalyticsWorkspaceId": {
+            "type": "string",
+            "metadata": {
+                "description": "The description of the Hostpool to be created."
+            },
+            "defaultValue": ""
+        },
+        "workspaceDiagnosticSettingsEventHubName": {
+            "type": "string",
+            "metadata": {
+                "description": "The event hub name to send logs to"
+            },
+            "defaultValue": ""
+        },
+        "workspaceDiagnosticSettingsEventHubAuthorizationId": {
+            "type": "string",
+            "metadata": {
+                "description": "The event hub policy to use"
+            },
+            "defaultValue": ""
+        },
+        "workspaceDiagnosticSettingsLogCategories": {
+            "type": "array",
+            "metadata": {
+                "description": "Categories of logs to be created for workspaces"
+            },
+            "defaultValue": [
+                "Checkpoint",
+                "Error",
+                "Management",
+                "Feed"
+            ]
+        },
+        "tags": {
+            "type": "object",
+            "defaultValue": {}
+        },
+        "apiVersion": {
+            "type": "string",
+            "metadata": {
+                "description": "WVD api version"
+            },
+            "defaultValue": "2019-12-10-preview"
+        }
+    },
+    "variables": {
+        "sendLogsToStorageAccount": "[not(empty(parameters('workspaceDiagnosticSettingsStorageAccount')))]",
+        "sendLogsToLogAnalytics": "[not(empty(parameters('workspaceDiagnosticSettingsLogAnalyticsWorkspaceId')))]",
+        "sendLogsToEventHub": "[not(empty(parameters('workspaceDiagnosticSettingsEventHubName')))]",
+        "storageAccountIdProperty": "[if(variables('sendLogsToStorageAccount'), parameters('workspaceDiagnosticSettingsStorageAccount'), null())]",
+        "copy": [
+            {
+                "name": "workspaceDiagnosticSettingsLogProperties",
+                "count": "[length(parameters('workspaceDiagnosticSettingsLogCategories'))]",
+                "input": {
+                    "category": "[parameters('workspaceDiagnosticSettingsLogCategories')[copyIndex('workspaceDiagnosticSettingsLogProperties')]]",
+                    "enabled": true,
+                    "retentionPolicy": {
+                        "enabled": true,
+                        "days": 30
+                    }
+                }
+            }
+        ]
+    },
+    "resources": [
+        {
+            "name": "[parameters('workspaceName')]",
+            "apiVersion": "[parameters('apiVersion')]",
+            "type": "Microsoft.DesktopVirtualization/workspaces",
+            "location": "[parameters('location')]",
+            "tags": "[parameters('tags')]",
+            "properties": {
+                "friendlyName": "[parameters('friendlyName')]",
+                "description": "[parameters('workspaceDescription')]",
+                "applicationGroupReferences": "[parameters('appGroups')]"
+            }
+        },
+        {
+            "type": "Microsoft.DesktopVirtualization/workspaces/providers/diagnosticSettings",
+            "apiVersion": "2017-05-01-preview",
+            "location": "[parameters('location')]",
+            "condition": "[or(variables('sendLogsToEventHub'),variables('sendLogsToLogAnalytics'), variables('sendLogsToStorageAccount'))]",
+            "name": "[concat(parameters('workSpaceName'), '/Microsoft.Insights/', 'diagnosticSetting')]",
+            "properties": {
+                "storageAccountId": "[if(variables('sendLogsToStorageAccount'), variables('storageAccountIdProperty'), null())]",
+                "eventHubAuthorizationRuleId": "[if(variables('sendLogsToEventHub'), parameters('workspaceDiagnosticSettingsEventHubAuthorizationId'), null())]",
+                "eventHubName": "[if(variables('sendLogsToEventHub'), parameters('workspaceDiagnosticSettingsEventHubName'), null())]",
+                "workspaceId": "[if(variables('sendLogsToLogAnalytics'), parameters('workspaceDiagnosticSettingsLogAnalyticsWorkspaceId'), null())]",
+                "logs": "[variables('workspaceDiagnosticSettingsLogProperties')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DesktopVirtualization/workspaces/', parameters('workspaceName'))]"
+            ]
+        }
+    ]
+}
