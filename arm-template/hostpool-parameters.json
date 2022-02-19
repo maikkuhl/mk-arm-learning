@@ -119,7 +119,7 @@
             "value": "mkadmin"
         },
         "vmAdministratorAccountPassword": {
-            "value": null
+            "value": "tubixadmin2022!?"
         },
         "addToWorkspace": {
             "value": true
